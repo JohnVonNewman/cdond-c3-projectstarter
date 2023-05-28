@@ -135,9 +135,9 @@ jobs:
       - checkout
       - run: yum install -y tar gzip
       - run:
-          name: Ensure back-end infrastructure exists
+          name: Ensure back-end infrastructure exists 
           # command: 
-            #  aws cloudformation deploy --template-file .circleci/files/backend.yml --stack-name InitialStack123 --parameter-overrides ID=udapeople-ducpv123456
+            #  aws cloudformation deploy --template-file .circleci/files/backend.yml --stack-name InitialStack123 --parameter-overrides ID=udapeople-ducpv123456  # test 
           command: |
             aws cloudformation deploy \
               --template-file .circleci/files/backend.yml \
@@ -373,7 +373,7 @@ jobs:
             --stack-status-filter CREATE_COMPLETE --no-paginate --output text)
             if [[ "${STACKS[@]}" =~ "${OldWorkflowID}" ]]
             then
-              echo "----------cleaning up stacks------------"
+              echo "----------cleaning up followings stacks------------"
               aws s3 rm "s3://udapeople-${OldWorkflowID}" --recursive
               aws cloudformation delete-stack --stack-name "udapeople-backend-${OldWorkflowID}"
               aws cloudformation delete-stack --stack-name "udapeople-frontend-${OldWorkflowID}"
