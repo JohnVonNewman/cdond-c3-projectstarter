@@ -136,6 +136,8 @@ jobs:
       - run: yum install -y tar gzip
       - run:
           name: Ensure back-end infrastructure exists
+          # command: 
+            #  aws cloudformation deploy --template-file .circleci/files/backend.yml --stack-name InitialStack123 --parameter-overrides ID=udapeople-ducpv123456
           command: |
             aws cloudformation deploy \
               --template-file .circleci/files/backend.yml \
