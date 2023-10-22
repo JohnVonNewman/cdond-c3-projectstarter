@@ -188,6 +188,7 @@ jobs:
                --query 'Reservations[*].Instances[*].PublicIpAddress' \
                --output text)
             echo $BACKEND_PUBLIC_IP >> .circleci/ansible/inventory.ini
+            echo ${CIRCLE_WORKFLOW_ID:0:7}
             curl --insecure https://kvdb.io/XxCnmiqvrTTK5NedoqN53u/backendurl -d $(echo $BACKEND_PUBLIC_IP)
             cat .circleci/ansible/inventory.ini
       - persist_to_workspace:
