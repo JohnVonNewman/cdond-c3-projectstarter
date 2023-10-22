@@ -38,7 +38,7 @@ commands:
           working_directory: ./backend
           when: on_fail
           command: |
-            SUCCESS=$(curl --insecure https://kvdb.io/6vYw4qPQgdgTCV5EAMUfK8/migration_<< parameters.id >>)
+            SUCCESS=$(curl --insecure https://kvdb.io/GPuyc7t2nRJUdogiSdpUeG/migration_<< parameters.id >>)
             echo $SUCCESS
             if [[ "$SUCCESS" == "1" ]]
             then
@@ -69,7 +69,7 @@ commands:
 jobs:
   build-frontend:
     docker:
-      - image: circleci/node:13.8.0
+      - image: circleci/node:14.18.1
     steps:
       - checkout
       - restore_cache:
@@ -86,7 +86,7 @@ jobs:
 
   build-backend:
     docker:
-      - image: circleci/node:13.8.0
+      - image: circleci/node:14.18.1
     steps:
       - checkout
       - restore_cache:
@@ -103,7 +103,7 @@ jobs:
 
   test-frontend:
     docker:
-      - image: circleci/node:13.8.0
+      - image: circleci/node:14.18.1
     steps:
       - checkout
       - restore_cache:
@@ -117,7 +117,7 @@ jobs:
 
   test-backend:
     docker:
-      - image: circleci/node:13.8.0
+      - image: circleci/node:14.18.1
     steps:
       - checkout
       - restore_cache:
@@ -131,7 +131,7 @@ jobs:
 
   scan-frontend:
     docker:
-      - image: circleci/node:13.8.0
+      - image: circleci/node:14.18.1
     steps:
       - checkout
       - restore_cache:
@@ -149,7 +149,7 @@ jobs:
 
   scan-backend:
     docker:
-      - image: circleci/node:13.8.0
+      - image: circleci/node:14.18.1
     steps:
       - checkout
       - restore_cache:
@@ -173,10 +173,12 @@ jobs:
       - run:
           name: Ensure back-end infrastructure exists
           command: |
+            aws sts get-caller-identity
             aws cloudformation deploy --template-file .circleci/files/backend.yml --tags project=udapeople --stack-name "udapeople-backend-${CIRCLE_WORKFLOW_ID:0:7}" --parameter-overrides ID="${CIRCLE_WORKFLOW_ID:0:7}"
       - run:
           name: Ensure front-end infrastructure exist
           command: |
+            aws sts get-caller-identity
             aws cloudformation deploy --template-file .circleci/files/frontend.yml --tags project=udapeople --stack-name "udapeople-frontend-${CIRCLE_WORKFLOW_ID:0:7}" --parameter-overrides ID="${CIRCLE_WORKFLOW_ID:0:7}"
       - run:
           name: Add back-end ip to ansible inventory
@@ -186,7 +188,8 @@ jobs:
                --query 'Reservations[*].Instances[*].PublicIpAddress' \
                --output text)
             echo $BACKEND_PUBLIC_IP >> .circleci/ansible/inventory.ini
-            curl --insecure https://kvdb.io/6vYw4qPQgdgTCV5EAMUfK8/backendurl -d $(echo $BACKEND_PUBLIC_IP)
+            echo ${CIRCLE_WORKFLOW_ID:0:7}
+            curl --insecure https://kvdb.io/GPuyc7t2nRJUdogiSdpUeG/backendurl -d $(echo $BACKEND_PUBLIC_IP)
             cat .circleci/ansible/inventory.ini
       - persist_to_workspace:
           root: ~/
@@ -202,7 +205,7 @@ jobs:
       - checkout
       - add_ssh_keys:
           fingerprints:
-          - "30:65:d6:0b:22:10:e3:a8:4a:ef:c2:9b:5f:33:49:b3"
+          - "66:1a:1c:98:8e:bf:f8:80:a9:0f:59:06:b1:70:cf:3c"
       - run:
           name: Install dependencies
           command: |
@@ -239,7 +242,7 @@ jobs:
 
   run-migrations:
     docker:
-      - image: circleci/node:13.8.0
+      - image: circleci/node:14.18.1
     steps:
       - checkout
       - run:
@@ -263,8 +266,8 @@ jobs:
           command: |
             if grep -q "success" ~/project/backend/migrations_dump.txt
             then
-              # If you are using kvdb.io, generate the bucket ID "FWfT3EJvSc3D57Yhp76CdN" in your local terminal first
-              curl --insecure https://kvdb.io/6vYw4qPQgdgTCV5EAMUfK8/migration_${CIRCLE_WORKFLOW_ID:0:7}  -d '1'
+              # If you are using kvdb.io, generate the bucket ID "GPuyc7t2nRJUdogiSdpUeG" in your local terminal first
+              curl --insecure https://kvdb.io/GPuyc7t2nRJUdogiSdpUeG/migration_${CIRCLE_WORKFLOW_ID:0:7}  -d '1'
             fi
       - destroy-environment:
           id: ${CIRCLE_WORKFLOW_ID:0:7}
@@ -366,7 +369,7 @@ jobs:
       - run:
           name: Backend smoke test.
           command: |
-            export BACKEND_URL=$(curl --insecure https://kvdb.io/6vYw4qPQgdgTCV5EAMUfK8/backendurl)
+            export BACKEND_URL=$(curl --insecure https://kvdb.io/GPuyc7t2nRJUdogiSdpUeG/backendurl)
             echo $BACKEND_URL
             curl "$BACKEND_URL:3030/api/status"
             if curl "$BACKEND_URL:3030/api/status" | grep "ok"
@@ -403,7 +406,7 @@ jobs:
             list-exports --query "Exports[?Name==\`WorkflowID\`].Value" \
             --no-paginate --output text)
             echo $OldWorkflowID
-            curl --insecure https://kvdb.io/6vYw4qPQgdgTCV5EAMUfK8/OldWorkflowID -d ${OldWorkflowID}
+            curl --insecure https://kvdb.io/GPuyc7t2nRJUdogiSdpUeG/OldWorkflowID -d ${OldWorkflowID}
       - run:
           name: Update Cloud Front distribution
           command: |
@@ -426,7 +429,7 @@ jobs:
           name: Remove old stacks and files
           command: |
             # Fetch the Old workflow ID
-            export OldWorkflowID=$(curl --insecure https://kvdb.io/6vYw4qPQgdgTCV5EAMUfK8/OldWorkflowID)
+            export OldWorkflowID=$(curl --insecure https://kvdb.io/GPuyc7t2nRJUdogiSdpUeG/OldWorkflowID)
             echo OldWorkflowID: "${OldWorkflowID}"
             echo CIRCLE_WORKFLOW_ID "${CIRCLE_WORKFLOW_ID:0:7}"
             # Fetch the stack names
