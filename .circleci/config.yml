@@ -1,5 +1,5 @@
 version: 2.1
-#refresh s3
+
 orbs:
   slack: circleci/slack@4.1
 
@@ -27,21 +27,22 @@ commands:
   revert-migrations:
     description: Revert the last migration if successfully run in the current workflow.
     parameters:
-      # Add parameter here
+      # Add parameter
       id:
         type: string
         default: "${CIRCLE_WORKFLOW_ID:0:7}"
     steps:
       - run:
-          name: Revert migrations
-          # Add when this will run
-          #working_directory: ./backend
+          name: Revert migrations          
+          working_directory: ./backend
           when: on_fail
           command: |
-            SUCCESS=$(curl --insecure https://kvdb.io/5bnxy9R52WJRhbqMXbtqNu/migration_<< parameters.id >>)          
-            if (( $SUCCESS == 1 ));
+            SUCCESS=$(curl --insecure https://kvdb.io/5bnxy9R52WJRhbqMXbtqNu/migration_<< parameters.id >>)
+            echo $SUCCESS
+            if [[ "$SUCCESS" == "1" ]]
             then
-              cd ~/project/backend
+              pwd
+              ls -la
               npm install
               npm run migration:revert
             fi
@@ -186,7 +187,6 @@ jobs:
                --query 'Reservations[*].Instances[*].PublicIpAddress' \
                --output text)
             echo $BACKEND_PUBLIC_IP >> .circleci/ansible/inventory.ini
-            echo ${CIRCLE_WORKFLOW_ID:0:7}
             curl --insecure https://kvdb.io/5bnxy9R52WJRhbqMXbtqNu/backendurl -d $(echo $BACKEND_PUBLIC_IP)
             cat .circleci/ansible/inventory.ini
       - persist_to_workspace:
@@ -252,8 +252,6 @@ jobs:
             sudo ./aws/install
       - restore_cache:
           keys: [backend-build]
-      - attach_workspace:
-          at: ~/
       - run:
           name: Run migrations
           command: |
@@ -265,8 +263,7 @@ jobs:
           name: Send migration results to Kvdb
           command: |
             if grep -q "success" ~/project/backend/migrations_dump.txt
-            then
-              # If you are using kvdb.io, generate the bucket ID "2a1XGSPoXY6UZ6cEGjAQdi" in your local terminal first
+            then              
               curl --insecure https://kvdb.io/5bnxy9R52WJRhbqMXbtqNu/migration_${CIRCLE_WORKFLOW_ID:0:7}  -d '1'
             fi
       - destroy-environment:
