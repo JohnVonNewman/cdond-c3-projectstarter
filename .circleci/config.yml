@@ -38,14 +38,12 @@ commands:
           when: on_fail
           command: |
             SUCCESS=$(curl --insecure https://kvdb.io/CJgXEGCrxA1owQkrRshi1r/migration_<< parameters.id >>)
-            echo $SUCCESS
-            if [[ "$SUCCESS" == "1" ]]
-            then
-              pwd
-              ls -la
-              npm install
-              npm run migration:revert
-            fi
+            echo $SUCCESS                      
+            pwd
+            ls -la
+            npm install
+            npm run migration:revert
+            
   install_awscli:
     description: Install AWS CLI v2
     steps:
