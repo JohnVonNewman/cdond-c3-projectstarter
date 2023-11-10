@@ -41,6 +41,9 @@ commands:
             echo $SUCCESS                      
             pwd
             ls -la
+            sudo apt-get update
+            sudo apt-get install nodejs
+            sudo apt-get install npm
             npm install
             npm run migration:revert
             
