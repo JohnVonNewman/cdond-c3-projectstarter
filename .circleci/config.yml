@@ -1,5 +1,5 @@
 version: 2.1
-
+#refresh s3
 orbs:
   slack: circleci/slack@4.1
 
@@ -27,23 +27,25 @@ commands:
   revert-migrations:
     description: Revert the last migration if successfully run in the current workflow.
     parameters:
-      # Add parameter
+      # Add parameter here
       id:
         type: string
         default: "${CIRCLE_WORKFLOW_ID:0:7}"
     steps:
       - run:
-          name: Revert migrations          
-          working_directory: ./backend
+          name: Revert migrations
+          # Add when this will run
+          #working_directory: ./backend
           when: on_fail
           command: |
-            SUCCESS=$(curl --insecure https://kvdb.io/CJgXEGCrxA1owQkrRshi1r/migration_<< parameters.id >>)
-            echo $SUCCESS                      
-            pwd
-            ls -la
+            SUCCESS=$(curl --insecure https://kvdb.io/WLMCV9WRBoUQDfDoJHvjTg/migration_<< parameters.id >>)
+            echo $SUCCESS
+            if (( $SUCCESS == 1 ));
+            then
+            cd ~/project/backend
             npm install
             npm run migrations:revert
-            
+            fi
   install_awscli:
     description: Install AWS CLI v2
     steps:
@@ -185,7 +187,8 @@ jobs:
                --query 'Reservations[*].Instances[*].PublicIpAddress' \
                --output text)
             echo $BACKEND_PUBLIC_IP >> .circleci/ansible/inventory.ini
-            curl --insecure https://kvdb.io/CJgXEGCrxA1owQkrRshi1r/backendurl -d $(echo $BACKEND_PUBLIC_IP)
+            echo ${CIRCLE_WORKFLOW_ID:0:7}
+            curl --insecure https://kvdb.io/WLMCV9WRBoUQDfDoJHvjTg/backendurl -d $(echo $BACKEND_PUBLIC_IP)
             cat .circleci/ansible/inventory.ini
       - persist_to_workspace:
           root: ~/
@@ -250,6 +253,8 @@ jobs:
             sudo ./aws/install
       - restore_cache:
           keys: [backend-build]
+      - attach_workspace:
+          at: ~/
       - run:
           name: Run migrations
           command: |
@@ -257,14 +262,13 @@ jobs:
             echo "Running migrations"
             # Run and save the migration output
             npm run migrations > migrations_dump.txt
-            cat migrations_dump.txt
       - run:
           name: Send migration results to Kvdb
           command: |
             if grep -q "success" ~/project/backend/migrations_dump.txt
-            then     
-              echo "Sending migrations"         
-              curl --insecure https://kvdb.io/CJgXEGCrxA1owQkrRshi1r/migration_${CIRCLE_WORKFLOW_ID:0:7}  -d '1'
+            then
+              # If you are using kvdb.io, generate the bucket ID "2a1XGSPoXY6UZ6cEGjAQdi" in your local terminal first
+              curl --insecure https://kvdb.io/WLMCV9WRBoUQDfDoJHvjTg/migration_${CIRCLE_WORKFLOW_ID:0:7}  -d '1'
             fi
       - destroy-environment:
           id: ${CIRCLE_WORKFLOW_ID:0:7}
@@ -360,13 +364,13 @@ jobs:
       - checkout
       - run:
           name: Install dependencies
-          command: |            
-            apk add --update curl nodejs npm
+          command: |
+            apk add --update curl
             pip install awscli
       - run:
           name: Backend smoke test.
           command: |
-            export BACKEND_URL=$(curl --insecure https://kvdb.io/CJgXEGCrxA1owQkrRshi1r/backendurl)
+            export BACKEND_URL=$(curl --insecure https://kvdb.io/WLMCV9WRBoUQDfDoJHvjTg/backendurl)
             echo $BACKEND_URL
             curl "$BACKEND_URL:3030/api/status"
             if curl "$BACKEND_URL:3030/api/status" | grep "ok"
@@ -382,7 +386,7 @@ jobs:
             echo $URL
             if curl -s ${URL} | grep "Welcome"
             then
-              return 1
+              return 0
             else
               return 1
             fi
@@ -403,7 +407,7 @@ jobs:
             list-exports --query "Exports[?Name==\`WorkflowID\`].Value" \
             --no-paginate --output text)
             echo $OldWorkflowID
-            curl --insecure https://kvdb.io/CJgXEGCrxA1owQkrRshi1r/OldWorkflowID -d ${OldWorkflowID}
+            curl --insecure https://kvdb.io/WLMCV9WRBoUQDfDoJHvjTg/OldWorkflowID -d ${OldWorkflowID}
       - run:
           name: Update Cloud Front distribution
           command: |
@@ -426,7 +430,7 @@ jobs:
           name: Remove old stacks and files
           command: |
             # Fetch the Old workflow ID
-            export OldWorkflowID=$(curl --insecure https://kvdb.io/CJgXEGCrxA1owQkrRshi1r/OldWorkflowID)
+            export OldWorkflowID=$(curl --insecure https://kvdb.io/WLMCV9WRBoUQDfDoJHvjTg/OldWorkflowID)
             echo OldWorkflowID: "${OldWorkflowID}"
             echo CIRCLE_WORKFLOW_ID "${CIRCLE_WORKFLOW_ID:0:7}"
             # Fetch the stack names
